@@ -13,6 +13,7 @@ import (
 )
 
 type Service struct {
+	Id       string `json:"id"`
 	Name     string `json:"name"`
 	Image    string `json:"image"`
 	App      string `json:"app"`
@@ -27,6 +28,8 @@ func ListServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tasks := GetAllTasks()
+
 	result := make([]*Service, 0, len(services))
 	for _, service := range services {
 		images := service.Spec.TaskTemplate.ContainerSpec.Image
@@ -36,6 +39,7 @@ func ListServices(w http.ResponseWriter, r *http.Request) {
 		}
 
 		s := Service{
+			Id:    service.ID,
 			Name:  service.Spec.Name,
 			Image: strings.Join(array, ":"),
 		}
@@ -48,11 +52,10 @@ func ListServices(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, ok := service.Spec.Labels["io.daocloud.dce.system"]; !ok {
-			s.Running = GetStatusByServiceName(service.Spec.Name)
+			s.Running = tasks.GetStatusByServiceId(service.ID)
 			result = append(result, &s)
 		}
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(result)
 }

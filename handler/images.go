@@ -1,14 +1,14 @@
 package handler
 
 import (
-	"../service"
-
 	"encoding/json"
-	"golang.org/x/net/context"
 	"net/http"
+
+	"../service"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
+	"golang.org/x/net/context"
 )
 
 type Image struct {
@@ -33,6 +33,5 @@ func ListImages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(result)
 }

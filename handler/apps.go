@@ -1,16 +1,15 @@
 package handler
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"./../conf"
 	"./../service"
 
-	"encoding/json"
 	log "github.com/Sirupsen/logrus"
-
 	"github.com/docker/docker/api/types/swarm"
-	"io/ioutil"
 )
 
 type App struct {
@@ -83,6 +82,5 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 		result = append(result, &app)
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(result)
 }
