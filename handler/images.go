@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"golang.org/x/net/context"
+	"strings"
 )
 
 type Image struct {
@@ -23,14 +24,25 @@ func ListImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := make([]*Image, 0, len(images))
+	imageMap := make(map[string][]string)
 	for _, image := range images {
 		for _, tag := range image.RepoTags {
-			i := Image{
-				Name: tag,
+			s := strings.SplitN(tag, ":", 2)
+			if len(s) != 2 {
+				continue
 			}
-			result = append(result, &i)
+
+			imageMap[s[0]] = append(imageMap[s[0]], tag)
 		}
+	}
+
+	result := make([]*Image, 0, len(imageMap))
+	for image, tags := range imageMap {
+		i := Image{
+			Name: image,
+			Tags: tags,
+		}
+		result = append(result, &i)
 	}
 
 	json.NewEncoder(w).Encode(result)

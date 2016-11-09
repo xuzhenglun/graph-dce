@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"./../service"
-
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"./../service"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"

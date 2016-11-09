@@ -8,7 +8,6 @@ import (
 var conf Config
 
 type Config struct {
-	Host     string `json:"host" env:"HOST"`
 	DceHost  string `json:"dce_host" env:"DCE_HOST"`
 	Username string `json:"username" env:"USERNAME"`
 	Password string `json:"password" env:"PASSWORD"`

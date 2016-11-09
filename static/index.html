@@ -335,7 +335,7 @@ polyline{
   $.get('/images')
     .then(function (res) {
       imageReady = true;
-      images = JSON.parse(res);
+      images = res;
       drawImageCircle();
       drawImageServiceLine();
     });
@@ -343,7 +343,7 @@ polyline{
   $.get('/services')
     .then(function (res) {
       serviceReady = true;
-      services = JSON.parse(res);
+      services = res;
       drawServiceCircle();
       drawImageServiceLine();
       drawServiceAppLine();
@@ -352,7 +352,7 @@ polyline{
   $.get('/apps')
     .then(function (res) {
       appReady = true;
-      apps = JSON.parse(res);
+      apps = res;
       drawAppCircle();
       drawServiceAppLine();
     });

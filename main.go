@@ -3,7 +3,10 @@ package main
 import (
 	"./conf"
 	"./handler"
+	"./middleware"
+	"./router"
 	"./service"
+
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -14,13 +17,16 @@ func main() {
 	conf.ParseEnvConfig()
 	service.Register()
 
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir("./static")))
-	mux.HandleFunc("/ping", handler.Ping)
-	mux.HandleFunc("/images", handler.ListImages)
-	mux.HandleFunc("/services", handler.ListServices)
-	mux.HandleFunc("/apps", handler.ListApps)
-	http.HandleFunc("/", handler.Warp(mux))
+	mux := router.NewRouter()
+	mux.Use("/ping", handler.Ping)
+	mux.Use("/", handler.Static)
+
+	api := mux.NewSubRouter()
+	api.UseFunc(middleware.Warp)
+	api.Use("/images", handler.ListImages)
+	api.Use("/services", handler.ListServices)
+	api.Use("/apps", handler.ListApps)
+	mux.Register()
 
 	log.Info("server is Listerning at 0.0.0.0:8080...")
 	http.ListenAndServe("0.0.0.0:8080", nil)

@@ -1,10 +1,10 @@
 package service
 
 import (
-	"./../conf"
-
 	"encoding/base64"
 	"net/http"
+
+	"./../conf"
 
 	log "github.com/Sirupsen/logrus"
 	docker "github.com/docker/docker/client"
