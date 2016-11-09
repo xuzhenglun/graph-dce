@@ -9,6 +9,7 @@ body {
   height: 100%;
   position: relative;
   margin: 0;
+  overflow: hidden;
 }
 
 svg {
@@ -40,6 +41,22 @@ polyline{
   fill: none;
 }
 
+.tooltip{
+  font-size:14px;
+  width:120;
+  height:auto;
+  position:absolute; 
+  background-color:#fff;
+  border-radius:2px;
+  padding: 10px 15px;
+  line-height: 20px;
+}
+
+.tooltip .status {
+  color: #6b727c;
+}
+
+
 </style>
 <body>
 
@@ -65,6 +82,11 @@ polyline{
   }
   var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
 
+  var tooltip = d3.select("body").append("div")
+    .attr("class","tooltip") //用于css设置类样式
+    .attr("opacity",0.0)
+    .style('display', 'none');
+
   var drawImageCircle = function () {
     var imageCircles = svg
       .append('g')
@@ -73,6 +95,16 @@ polyline{
     .data(images).enter().append('g')
       .attr('transform', function (d, i) {
         return 'translate(' + viewerWidth / 6 + ', ' + (150 + 40 * i) + ')';
+      })
+      .on('mouseover', function (d, i) {
+        tooltip.html(d.name)
+          .style('left',(d3.event.pageX)+'px')
+          .style('top',(d3.event.pageY+20)+'px')
+          .style('opacity',1.0)
+          .style('display', 'block');
+      })
+      .on('mouseleave', function () {
+        tooltip.style("opacity",0.0);
       });
 
     imageCircles.append('rect')
@@ -81,6 +113,7 @@ polyline{
       .attr('fill', '#282b39')
       .attr('stroke-width', 1)
       .attr('stroke', '#fff');
+      
 
     imageCircles.append('circle')
       .attr('r', r)
@@ -94,7 +127,7 @@ polyline{
       .attr('dx', '20px')
       .attr('dy', '23px')
       .text(function (d) {
-        return d.name.substr(0, 15);
+        return d.name.substr(0, 20);
       });
   };
 
@@ -105,6 +138,16 @@ polyline{
       .data(services).enter().append('g')
       .attr('transform', function (d, i) {
         return 'translate(' + viewerWidth / 2 + ', ' + (150 + 40 * i) + ')';
+      })
+      .on('mouseover', function (d, i) {
+        tooltip.html(d.name + '<br><span class="status">' + d.running + '/' + d.replicas + ' 正在运行</span>')
+          .style('left',(d3.event.pageX)+'px')
+          .style('top',(d3.event.pageY+20)+'px')
+          .style('opacity',1.0)
+          .style('display', 'block');
+      })
+      .on('mouseleave', function () {
+        tooltip.style("opacity",0.0);
       });
 
     serviceCircles.append('rect')
