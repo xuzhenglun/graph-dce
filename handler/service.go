@@ -4,11 +4,12 @@ import (
 	"./../service"
 
 	"encoding/json"
-	"github.com/docker/docker/api/types"
-	"golang.org/x/net/context"
 	"net/http"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
+	"golang.org/x/net/context"
 )
 
 type Service struct {
@@ -28,9 +29,15 @@ func ListServices(w http.ResponseWriter, r *http.Request) {
 
 	result := make([]*Service, 0, len(services))
 	for _, service := range services {
+		images := service.Spec.TaskTemplate.ContainerSpec.Image
+		array := strings.Split(images, ":")
+		if len(array) == 1 {
+			array = append(array, "latest")
+		}
+
 		s := Service{
 			Name:  service.Spec.Name,
-			Image: service.Spec.TaskTemplate.ContainerSpec.Image,
+			Image: strings.Join(array, ":"),
 		}
 
 		appName, _ := service.Spec.Labels["com.docker.stack.namespace"]
