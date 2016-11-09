@@ -1,10 +1,7 @@
-FROM golang:1.7.3
+FROM alpine
 
-ADD . $GOPATH/src
-
-RUN go get graph-dce/...
-RUN go install graph-dce
+COPY . /src
 
 EXPOSE 8080
 
-ENTRYPOINT ["graph-dce"]
+ENTRYPOINT ["/src/main"]
