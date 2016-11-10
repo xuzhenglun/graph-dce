@@ -13,7 +13,7 @@ body {
 }
 
 svg {
-  width: 100%;
+  /*width: 100%;*/
   height: 100%;
   background-image: -moz-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
   background-image: -webkit-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
@@ -73,6 +73,10 @@ polyline{
   var views = ['镜像', '服务', '应用'];
 
   var viewerWidth = $(document).width();
+  if (viewerWidth < 800){
+      viewerWidth = 800;
+  }
+
   var viewerHeight = $(document).height();
 
   var r = 3;
@@ -280,6 +284,7 @@ polyline{
   };
 
   var svg = d3.select('body').append('svg')
+    .attr('width',viewerWidth)
     .call(zoomListener)
     .append('g');
   var diagonal = d3.svg.diagonal()
