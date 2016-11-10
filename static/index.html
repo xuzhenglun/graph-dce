@@ -335,7 +335,12 @@ polyline{
   $.get('/images')
     .then(function (res) {
       imageReady = true;
-      images = res;
+      images = [];
+      res.map(function (image) {
+        image.tags.map(function (tag) {
+          images.push({'name':tag});
+        });
+      });
       drawImageCircle();
       drawImageServiceLine();
     });
