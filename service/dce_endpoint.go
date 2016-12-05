@@ -35,8 +35,7 @@ func Register() {
 	var err error
 	DefaultDceClinet.Client, err = docker.NewClient(c.DceHost, "", nil, header)
 	if err != nil {
-		log.Error(err)
-		return
+		log.Panic(err)
 	}
 }
 
