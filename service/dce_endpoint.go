@@ -42,6 +42,10 @@ func Register() {
 func AddHeader(req *http.Request) {
 	c := conf.GetConf()
 
+	if c.Username == "" || c.Password == "" {
+		return
+	}
+
 	basic := base64.StdEncoding.EncodeToString([]byte(c.Username + ":" + c.Password))
 	req.Header.Add("Authorization", "Basic "+basic)
 }

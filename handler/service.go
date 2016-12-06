@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 
 	"./../service"
@@ -21,6 +22,12 @@ type Service struct {
 	Replicas *int   `json:"replicas"`
 }
 
+type Services []*Service
+
+func (s Services) Len() int           { return len(s) }
+func (s Services) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s Services) Less(i, j int) bool { return s[i].Name < s[j].Name }
+
 func ListServices(w http.ResponseWriter, r *http.Request) {
 	services, err := service.DefaultDceClinet.ServiceList(context.Background(), types.ServiceListOptions{})
 	if err != nil {
@@ -30,7 +37,7 @@ func ListServices(w http.ResponseWriter, r *http.Request) {
 
 	tasks := GetAllTasks()
 
-	result := make([]*Service, 0, len(services))
+	result := make(Services, 0, len(services))
 	for _, service := range services {
 		images := service.Spec.TaskTemplate.ContainerSpec.Image
 		array := strings.Split(images, ":")
@@ -57,5 +64,6 @@ func ListServices(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	sort.Sort(result)
 	json.NewEncoder(w).Encode(result)
 }

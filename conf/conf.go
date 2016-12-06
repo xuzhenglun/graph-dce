@@ -33,10 +33,10 @@ func configCheck() {
 	}
 
 	if conf.Username == "" {
-		log.Fatal("DCE username can not be empty")
+		log.Warning("DCE username is empty")
 	}
 
 	if conf.Password == "" {
-		log.Fatal("DCE password can not be empty")
+		log.Warning("DCE password is empty")
 	}
 }

@@ -1,370 +1,461 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<style>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    html,
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      margin: 0;
+      overflow: hidden;
+    }
 
-html,
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  width: 100%;
-  height: 100%;
-  position: relative;
-  margin: 0;
-  overflow: hidden;
-}
+    svg {
+      /*width: 100%;*/
+      height: 100%;
+      background-image: -moz-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
+      background-image: -webkit-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
+      background-image: -ms-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
+    }
 
-svg {
-  /*width: 100%;*/
-  height: 100%;
-  background-image: -moz-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
-  background-image: -webkit-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
-  background-image: -ms-linear-gradient( 0deg, #1c1e27 0%, #232735 100%);
-}
+    text {
+      fill: #fff;
+    }
 
-text {
-  fill: #fff;
-}
+    path.slice{
+      stroke-width:2px;
+    }
 
-path.slice{
-  stroke-width:2px;
-}
+    polyline{
+      opacity: .3;
+      stroke: black;
+      stroke-width: 2px;
+      fill: none;
+    }
 
-polyline{
-  opacity: .3;
-  stroke: black;
-  stroke-width: 2px;
-  fill: none;
-}
+    .link {
+      stroke: #484e61;
+      stroke-width: 2;
+      fill: none;
+    }
 
-.link {
-  stroke: #484e61;
-  stroke-width: 2;
-  fill: none;
-}
+    .tooltip{
+      font-size:14px;
+      width:120;
+      height:auto;
+      position:absolute; 
+      background-color:#fff;
+      border-radius:2px;
+      padding: 10px 15px;
+      line-height: 20px;
+    }
 
-.tooltip{
-  font-size:14px;
-  width:120;
-  height:auto;
-  position:absolute; 
-  background-color:#fff;
-  border-radius:2px;
-  padding: 10px 15px;
-  line-height: 20px;
-}
+    .tooltip .status {
+      color: #6b727c;
+    }
+  </style>
+</head>
 
-.tooltip .status {
-  color: #6b727c;
-}
-
-
-</style>
 <body>
+  <script src="jquery-3.1.1.min.js"></script>
+  <script src="underscore.js"></script>
+  <script src="d3.v3.min.js"></script>
+  <script>
+    var images;
+    var tags;
+    var services;
+    var apps;
+    var imageReady = false;
+    var serviceReady = false;
+    var appReady = false;
+    var views = ['镜像', '版本', '服务', '应用'];
 
-<script src="jquery-3.1.1.min.js"></script>
-<script src="underscore.js"></script>
-<script src="d3.v3.min.js"></script>
-<script>
-  var images;
-  var services;
-  var apps;
-  var imageReady = false;
-  var serviceReady = false;
-  var appReady = false;
-  var views = ['镜像', '服务', '应用'];
+    var viewerWidth = $(document).width();
+    if (viewerWidth < 1100){
+        viewerWidth = 1100;
+    }
 
-  var viewerWidth = $(document).width();
-  if (viewerWidth < 800){
-      viewerWidth = 800;
-  }
+    var viewerHeight = $(document).height();
 
-  var viewerHeight = $(document).height();
+    var r = 3;
 
-  var r = 3;
+    var zoom = function () {
+      svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    }
+    var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
 
-  var zoom = function () {
-    svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-  }
-  var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+    var tooltip = d3.select("body").append("div")
+      .attr("class","tooltip") //用于css设置类样式
+      .attr("opacity",0.0)
+      .style('display', 'none');
 
-  var tooltip = d3.select("body").append("div")
-    .attr("class","tooltip") //用于css设置类样式
-    .attr("opacity",0.0)
-    .style('display', 'none');
+    var drawImageCircle = function () {
+      var imageCircles = svg
+        .append('g')
+        .attr('class', 'images')
+        .selectAll('.circle')
+      .data(images).enter().append('g')
+        .attr('transform', function (d, i) {
+          return 'translate(' + viewerWidth / 16 + ', ' + (150 + 40 * d.position) + ')';
+        })
+        .on('mouseover', function (d, i) {
+          tooltip.html(d.name)
+            .style('left',(d3.event.pageX)+'px')
+            .style('top',(d3.event.pageY+20)+'px')
+            .style('opacity',1.0)
+            .style('display', 'block');
+        })
+        .on('mouseleave', function () {
+          tooltip.style("opacity",0.0);
+        });
 
-  var drawImageCircle = function () {
-    var imageCircles = svg
-      .append('g')
-      .attr('class', 'images')
-      .selectAll('.circle')
-    .data(images).enter().append('g')
-      .attr('transform', function (d, i) {
-        return 'translate(' + viewerWidth / 6 + ', ' + (150 + 40 * i) + ')';
-      })
-      .on('mouseover', function (d, i) {
-        tooltip.html(d.name)
-          .style('left',(d3.event.pageX)+'px')
-          .style('top',(d3.event.pageY+20)+'px')
-          .style('opacity',1.0)
-          .style('display', 'block');
-      })
-      .on('mouseleave', function () {
-        tooltip.style("opacity",0.0);
-      });
+      imageCircles.append('rect')
+        .attr('width', 200)
+        .attr('height', 35)
+        .attr('fill', '#282b39')
+        .attr('stroke-width', 1)
+        .attr('stroke', '#fff');
 
-    imageCircles.append('rect')
-      .attr('width', 200)
-      .attr('height', 35)
-      .attr('fill', '#282b39')
-      .attr('stroke-width', 1)
-      .attr('stroke', '#fff');
+      imageCircles.append('circle')
+        .attr('r', r)
+        .attr('cx', 190)
+        .attr('cy', 18)
+        .attr('fill', '#252832')
+        .attr('stroke-width', 1)
+        .attr('stroke', '#fff');
+
+      imageCircles.append('text')
+        .attr('dx', '20px')
+        .attr('dy', '23px')
+        .text(function (d) {
+          return d.name.substr(0, 20);
+        });
+    };
+
+    var drawTagCircle = function () {
+      var imageCircles = svg
+        .append('g')
+        .attr('class', 'images')
+        .selectAll('.circle')
+      .data(tags).enter().append('g')
+        .attr('transform', function (d, i) {
+          return 'translate(' + viewerWidth * 5 / 16 + ', ' + (150 + 40 * i) + ')';
+        })
+        .on('mouseover', function (d, i) {
+          tooltip.html(d.name)
+            .style('left',(d3.event.pageX)+'px')
+            .style('top',(d3.event.pageY+20)+'px')
+            .style('opacity',1.0)
+            .style('display', 'block');
+        })
+        .on('mouseleave', function () {
+          tooltip.style("opacity",0.0);
+        });
+
+      imageCircles.append('rect')
+        .attr('width', 200)
+        .attr('height', 35)
+        .attr('fill', '#282b39')
+        .attr('stroke-width', 1)
+        .attr('stroke', '#fff');
       
+      imageCircles.append('circle')
+        .attr('r', r)
+        .attr('cx', 7)
+        .attr('cy', 18)
+        .attr('fill', '#252832')
+        .attr('stroke-width', 1)
+        .attr('stroke', '#fff');  
 
-    imageCircles.append('circle')
-      .attr('r', r)
-      .attr('cx', 190)
-      .attr('cy', 18)
-      .attr('fill', '#252832')
-      .attr('stroke-width', 1)
-      .attr('stroke', '#fff');
+      imageCircles.append('circle')
+        .attr('r', r)
+        .attr('cx', 190)
+        .attr('cy', 18)
+        .attr('fill', '#252832')
+        .attr('stroke-width', 1)
+        .attr('stroke', '#fff');
 
-    imageCircles.append('text')
-      .attr('dx', '20px')
-      .attr('dy', '23px')
-      .text(function (d) {
-        return d.name.substr(0, 20);
-      });
-  };
+      imageCircles.append('text')
+        .attr('dx', '20px')
+        .attr('dy', '23px')
+        .text(function (d) {
+          return d.name.split(':')[1];
+        });
+    };
 
-  var drawServiceCircle = function () {
-    var serviceCircles = svg.append('g')
-      .attr('class', 'services')
-      .selectAll('.circle')
-      .data(services).enter().append('g')
-      .attr('transform', function (d, i) {
-        return 'translate(' + viewerWidth / 2 + ', ' + (150 + 40 * i) + ')';
-      })
-      .on('mouseover', function (d, i) {
-        tooltip.html(d.name + '<br><span class="status">' + d.running + '/' + d.replicas + ' 正在运行</span>')
-          .style('left',(d3.event.pageX)+'px')
-          .style('top',(d3.event.pageY+20)+'px')
-          .style('opacity',1.0)
-          .style('display', 'block');
-      })
-      .on('mouseleave', function () {
-        tooltip.style("opacity",0.0);
-      });
+    var drawServiceCircle = function () {
+      var serviceCircles = svg.append('g')
+        .attr('class', 'services')
+        .selectAll('.circle')
+        .data(services).enter().append('g')
+        .attr('transform', function (d, i) {
+          return 'translate(' + viewerWidth * 9 / 16 + ', ' + (150 + 40 * i) + ')';
+        })
+        .on('mouseover', function (d, i) {
+          tooltip.html(d.name + '<br><span class="status">' + d.running + '/' + d.replicas + ' 正在运行</span>')
+            .style('left',(d3.event.pageX)+'px')
+            .style('top',(d3.event.pageY+20)+'px')
+            .style('opacity',1.0)
+            .style('display', 'block');
+        })
+        .on('mouseleave', function () {
+          tooltip.style("opacity",0.0);
+        });
 
-    serviceCircles.append('rect')
-      .attr('width', 200)
-      .attr('height', 35)
-      .attr('fill', 'url(#service-rect-gradient)');
+      serviceCircles.append('rect')
+        .attr('width', 200)
+        .attr('height', 35)
+        .attr('fill', 'url(#service-rect-gradient)');
 
-    serviceCircles.append('circle')
-      .attr('r', r)
-      .attr('cx', 190)
-      .attr('cy', 18)
-      .attr('fill', '#252832');
+      serviceCircles.append('circle')
+        .attr('r', r)
+        .attr('cx', 190)
+        .attr('cy', 18)
+        .attr('fill', '#252832');
 
-    serviceCircles.append('circle')
-      .attr('r', r)
-      .attr('cx', 7)
-      .attr('cy', 18)
-      .attr('fill', '#252832');
+      serviceCircles.append('circle')
+        .attr('r', r)
+        .attr('cx', 7)
+        .attr('cy', 18)
+        .attr('fill', '#252832');
 
-    serviceCircles.append('text')
-      .attr('dx', '20px')
-      .attr('dy', '23px')
-      .text(function (d) {
-        return d.name;
-      });
-  };
+      serviceCircles.append('text')
+        .attr('dx', '20px')
+        .attr('dy', '23px')
+        .text(function (d) {
+          return d.name;
+        });
+    };
 
-  var drawAppCircle = function () {
-    var appCircles = svg
-      .append('g')
-      .attr('class', 'apps')
-      .selectAll('.circle')
-    .data(apps).enter().append('g')
-      .attr('transform', function (d, i) {
-        return 'translate(' + viewerWidth * 5 / 6 + ', ' + (150 + 40 * i) + ')';
-      });
+    var drawAppCircle = function () {
+      var appCircles = svg
+        .append('g')
+        .attr('class', 'apps')
+        .selectAll('.circle')
+      .data(apps).enter().append('g')
+        .attr('transform', function (d, i) {
+          return 'translate(' + viewerWidth * 13 / 16 + ', ' + (150 + 40 * i) + ')';
+        });
 
-    appCircles.append('rect')
-      .attr('width', 200)
-      .attr('height', 35)
-      .attr('fill', 'url(#app-rect-gradient)');
+      appCircles.append('rect')
+        .attr('width', 200)
+        .attr('height', 35)
+        .attr('fill', 'url(#app-rect-gradient)');
 
-    appCircles.append('circle')
-      .attr('r', r)
-      .attr('cx', 7)
-      .attr('cy', 18)
-      .attr('fill', '#252832');
+      appCircles.append('circle')
+        .attr('r', r)
+        .attr('cx', 7)
+        .attr('cy', 18)
+        .attr('fill', '#252832');
 
-    appCircles.append('text')
-      .attr('dx', '20px')
-      .attr('dy', '23px')
-      .text(function (d) {
-        return d.name;
-      });
-  };
+      appCircles.append('text')
+        .attr('dx', '20px')
+        .attr('dy', '23px')
+        .text(function (d) {
+          return d.name;
+        });
+    };
 
-  var drawImageServiceLine = function () {
-    if (!imageReady || !serviceReady) {
-      return;
-    }
+    var drawImageTagLine = function () {
+      svg.append('g')
+        .attr('class', 'image-tag-lines')
+        .selectAll('path')
+        .data(tags).enter().append('path')
+        .attr('class', 'link')
+        .attr('d', function (d, i) {
+          var image = _.findWhere(images, {
+            name: d.name.split(':')[0],
+          });
 
-    svg.append('g')
-      .attr('class', 'image-service-lines')
-      .selectAll('path')
+          var source = {
+            y: viewerWidth * 5 / 16 + 7,
+            x: 150 + 40 * i + 18,
+          };
+          var target;
+
+          if (image) {
+            target = {
+              y: viewerWidth * 1 / 16 + 190,
+              x: 150 + 40 * image.position + 18,
+            };
+          } else {
+            target = source;
+          }
+
+          return diagonal({
+            source: target,
+            target: source,
+          });
+        });
+    };
+
+    var drawTagServiceLine = function () {
+      if (!imageReady || !serviceReady) {
+        return;
+      }
+
+      svg.append('g')
+        .attr('class', 'image-service-lines')
+        .selectAll('path')
+        .data(services).enter().append('path')
+        .attr('class', 'link')
+        .attr('d', function (d, i) {
+          var imageIndex = _.findIndex(tags, {
+            name: d.image,
+          });
+
+          var source = {
+            y: viewerWidth * 9 / 16 + 7,
+            x: 150 + 40 * i + 18,
+          };
+          var target;
+
+          if (imageIndex > -1) {
+            target = {
+              y: viewerWidth * 5 / 16 + 190,
+              x: 150 + 40 * imageIndex + 18,
+            };
+          } else {
+            target = source;
+          }
+
+          return diagonal({
+            source: target,
+            target: source,
+          });
+        });
+    };
+
+    var drawServiceAppLine = function () {
+      if (!serviceReady || !appReady) {
+        return;
+      }
+
+      svg.append('g')
+        .attr('class', 'service-app-lines')
+        .selectAll('path')
       .data(services).enter().append('path')
-      .attr('class', 'link')
-      .attr('d', function (d, i) {
-        var imageIndex = _.findIndex(images, {
-          name: d.image,
-        });
+        .attr('class', 'link')
+        .attr('d', function (d, i) {
+          var appIndex = _.findIndex(apps, {
+            name: d.app,
+          });
 
-        var source = {
-          y: viewerWidth / 2 + 7,
-          x: 150 + 40 * i + 18,
-        };
-        var target;
-
-        if (imageIndex > -1) {
-          target = {
-            y: viewerWidth / 6 + 190,
-            x: 150 + 40 * imageIndex + 18,
+          var source = {
+            y: viewerWidth * 9/ 16 + 190,
+            x: 150 + 40 * i + 18,
           };
-        } else {
-          target = source;
-        }
+          var target;
 
-        return diagonal({
-          source: target,
-          target: source,
+          if (appIndex > -1) {
+            target = {
+              y: viewerWidth * 13 / 16 + 7,
+              x: 150 + 40 * appIndex + 18,
+            };
+          } else {
+            target = source;
+          }
+          
+
+          return diagonal({
+            source: target,
+            target: source,
+          });
         });
+    };
+
+    var svg = d3.select('body').append('svg')
+      .attr('width',viewerWidth)
+      .call(zoomListener)
+      .append('g');
+    var diagonal = d3.svg.diagonal()
+      .projection(function(d) {
+        return [d.y, d.x];
       });
-  };
 
-  var drawServiceAppLine = function () {
-    if (!serviceReady || !appReady) {
-      return;
-    }
-
-    svg.append('g')
-      .attr('class', 'service-app-lines')
-      .selectAll('path')
-    .data(services).enter().append('path')
-      .attr('class', 'link')
-      .attr('d', function (d, i) {
-        var appIndex = _.findIndex(apps, {
-          name: d.app,
-        });
-
-        var source = {
-          y: viewerWidth / 2 + 190,
-          x: 150 + 40 * i + 18,
-        };
-        var target;
-
-        if (appIndex > -1) {
-          target = {
-            y: viewerWidth * 5 / 6 + 7,
-            x: 150 + 40 * appIndex + 18,
-          };
-        } else {
-          target = source;
-        }
-        
-
-        return diagonal({
-          source: target,
-          target: source,
-        });
+    svg.selectAll('title')
+      .data(views).enter().append('text')
+      .attr('transform', function (d, i) {
+        return 'translate(' + (viewerWidth * (4 * i + 1) / 16 + 18) + ',100)';
+      })
+      .text(function (d) {
+        return d;
       });
-  };
 
-  var svg = d3.select('body').append('svg')
-    .attr('width',viewerWidth)
-    .call(zoomListener)
-    .append('g');
-  var diagonal = d3.svg.diagonal()
-    .projection(function(d) {
-      return [d.y, d.x];
-    });
-
-  svg.selectAll('title')
-    .data(views).enter().append('text')
-    .attr('transform', function (d, i) {
-      return 'translate(' + (viewerWidth * (i * 2 + 1) / 6 + 18) + ',100)';
-    })
-    .text(function (d) {
-      return d;
-    });
-
-  svg.append('linearGradient')
-    .attr('id', 'service-rect-gradient')
-    .attr('gradientUnits', 'userSpaceOnUse')
-    .attr('x1', 0).attr('y1', 0)
-    .attr('x2', 200).attr('y2', 35)
-    .selectAll('stop')
-    .data([
-      { offset: '0', color: '#f13ad1' },
-      { offset: '1', color: '#9b45f3' },
-    ])
-    .enter().append('stop')
-    .attr('offset', (d) => {
-      return d.offset;
-    })
-    .attr('stop-color', (d) => {
-      return d.color;
-    });
-
-  svg.append('linearGradient')
-    .attr('id', 'app-rect-gradient')
-    .attr('gradientUnits', 'userSpaceOnUse')
-    .attr('x1', 0).attr('y1', 0)
-    .attr('x2', 200).attr('y2', 35)
-    .selectAll('stop')
-    .data([
-      { offset: '0', color: '#5044f1' },
-      { offset: '1', color: '#17e0aa' },
-    ])
-    .enter().append('stop')
-    .attr('offset', (d) => {
-      return d.offset;
-    })
-    .attr('stop-color', (d) => {
-      return d.color;
-    });
-
-  $.get('/images')
-    .then(function (res) {
-      imageReady = true;
-      images = [];
-      res.map(function (image) {
-        image.tags.map(function (tag) {
-          images.push({'name':tag});
-        });
+    svg.append('linearGradient')
+      .attr('id', 'service-rect-gradient')
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('x1', 0).attr('y1', 0)
+      .attr('x2', 200).attr('y2', 35)
+      .selectAll('stop')
+      .data([
+        { offset: '0', color: '#f13ad1' },
+        { offset: '1', color: '#9b45f3' },
+      ])
+      .enter().append('stop')
+      .attr('offset', (d) => {
+        return d.offset;
+      })
+      .attr('stop-color', (d) => {
+        return d.color;
       });
-      drawImageCircle();
-      drawImageServiceLine();
-    });
 
-  $.get('/services')
-    .then(function (res) {
-      serviceReady = true;
-      services = res;
-      drawServiceCircle();
-      drawImageServiceLine();
-      drawServiceAppLine();
-    });
+    svg.append('linearGradient')
+      .attr('id', 'app-rect-gradient')
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('x1', 0).attr('y1', 0)
+      .attr('x2', 200).attr('y2', 35)
+      .selectAll('stop')
+      .data([
+        { offset: '0', color: '#5044f1' },
+        { offset: '1', color: '#17e0aa' },
+      ])
+      .enter().append('stop')
+      .attr('offset', (d) => {
+        return d.offset;
+      })
+      .attr('stop-color', (d) => {
+        return d.color;
+      });
 
-  $.get('/apps')
-    .then(function (res) {
-      appReady = true;
-      apps = res;
-      drawAppCircle();
-      drawServiceAppLine();
-    });
-</script>
+    $.get('/images')
+      .then(function (res) {
+        var position = 0;
+        imageReady = true;
+        images = res;
+        tags = [];
+        res.map(function (image) {
+          image.position = position;
+          image.tags.map(function (tag) {
+            position++;
+            tags.push({'name':tag});
+          });
+        });
+        drawImageCircle();
+        drawTagCircle();
+        drawImageTagLine();
+        drawTagServiceLine();
+      });
+
+    $.get('/services')
+      .then(function (res) {
+        serviceReady = true;
+        services = res;
+        drawServiceCircle();
+        drawTagServiceLine();
+        drawServiceAppLine();
+      });
+
+    $.get('/apps')
+      .then(function (res) {
+        appReady = true;
+        apps = res;
+        drawAppCircle();
+        drawServiceAppLine();
+      });
+  </script>
 </body>
+</html>

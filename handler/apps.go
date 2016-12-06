@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"sort"
 
 	"./../conf"
 	"./../service"
@@ -22,6 +23,12 @@ type DceApp struct {
 	Tenant   string
 	Services []*swarm.Service
 }
+
+type Apps []*App
+
+func (s Apps) Len() int           { return len(s) }
+func (s Apps) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s Apps) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 func ListApps(w http.ResponseWriter, r *http.Request) {
 	c := conf.GetConf()
@@ -59,7 +66,7 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := make([]*App, 0, len(dceApps))
+	result := make(Apps, 0, len(dceApps))
 
 	for _, dceApp := range dceApps {
 		app := App{
@@ -82,5 +89,6 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 		result = append(result, &app)
 	}
 
+	sort.Sort(result)
 	json.NewEncoder(w).Encode(result)
 }
